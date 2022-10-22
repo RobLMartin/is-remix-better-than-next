@@ -3,23 +3,6 @@ import bcrypt from "bcryptjs";
 
 import { db } from "./db.server";
 
-type LoginForm = {
-  username: string;
-  password: string;
-};
-
-export const login = async ({ username, password }: LoginForm) => {
-  const user = await db.user.findUnique({
-    where: { username },
-  });
-  if (!user) return null;
-
-  const isCorrectPassword = await bcrypt.compare(password, user.passwordHash);
-  if (!isCorrectPassword) return null;
-
-  return { id: user.id, username };
-};
-
 const sessionSecret = process.env.SESSION_SECRET;
 if (!sessionSecret) {
   throw new Error("SESSION_SECRET must be set");
@@ -70,4 +53,47 @@ export const requireUserId = async (
     throw redirect(`/login?${searchParams}`);
   }
   return userId;
+};
+
+export const getUser = async (request: Request) => {
+  const userId = await getUserId(request);
+  if (typeof userId !== "string") {
+    return null;
+  }
+
+  try {
+    const user = await db.user.findUnique({
+      where: { id: userId },
+      select: { id: true, username: true },
+    });
+    return user;
+  } catch (error) {
+    throw logout(request);
+  }
+};
+
+type LoginForm = {
+  username: string;
+  password: string;
+};
+
+export const login = async ({ username, password }: LoginForm) => {
+  const user = await db.user.findUnique({
+    where: { username },
+  });
+  if (!user) return null;
+
+  const isCorrectPassword = await bcrypt.compare(password, user.passwordHash);
+  if (!isCorrectPassword) return null;
+
+  return { id: user.id, username };
+};
+
+export const logout = async (request: Request) => {
+  const session = await getUserSession(request);
+  return redirect("/login", {
+    headers: {
+      "Set-Cookie": await storage.destroySession(session),
+    },
+  });
 };

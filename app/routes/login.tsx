@@ -1,10 +1,10 @@
 import type { ActionFunction, LinksFunction } from "@remix-run/node";
-import { json, redirect } from "@remix-run/node";
 import { Link, useActionData, useSearchParams } from "@remix-run/react";
-import { db } from "~/utils/db.server";
-import { createUserSession, login } from "~/utils/session.server";
+import { json } from "@remix-run/node";
 
 import stylesUrl from "../styles/login.css";
+import { createUserSession, login } from "~/utils/session.server";
+import { db } from "~/utils/db.server";
 
 export const links: LinksFunction = () => {
   return [{ rel: "stylesheet", href: stylesUrl }];
